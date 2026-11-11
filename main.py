@@ -18,7 +18,7 @@ DATA_SOURCE = os.getenv('T0_DATA_SOURCE', 'api').strip().lower()
 TABLE = 't0_joao_melo_diario'
 CSV = ROOT / 't0_centro_oeste_01_a_10_preparado.csv'
 META = 70.0
-# 10/11 foi extraído ainda durante o dia; ignorá-lo até validação posterior.
+# O CSV original pode conter o relatório parcial de 10/11.
 EXCLUDED_DATES = {'2026-11-10'}
 app = FastAPI(title='J&T | T0 Bruna — Centro-Oeste')
 app.mount('/static', StaticFiles(directory=ROOT / 'static'), name='static')
@@ -52,9 +52,9 @@ def dataset():
             raise HTTPException(502, f'Falha consultando PostgreSQL pela JT API: {exc}') from exc
     else:
         raise HTTPException(500, 'T0_DATA_SOURCE deve ser csv ou api')
-    # Evita contaminação com registros da Orlean e com snapshot parcial de 10/11.
+    # A API já contém a carga validada de 10/11.
     return [r for r in rows if str(r.get('rm') or '').strip() == 'JOAO MELO SILVA'
-            and str(r.get('data') or '')[:10] not in EXCLUDED_DATES]
+            and (DATA_SOURCE != 'csv' or str(r.get('data') or '')[:10] not in EXCLUDED_DATES)]
 
 
 def stats(items):
