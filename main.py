@@ -44,7 +44,7 @@ def dataset():
         if not API_KEY: raise HTTPException(503, 'JT_API_KEY ausente no .env')
         try:
             r = requests.post(API_URL + '/query', headers={'X-API-Key': API_KEY},
-                json={'sql': f'SELECT data::text AS data, codigo_base, base, uf, rm, sc, total_pedidos, t0_ok, t0_perdido, taxa_t0 FROM public.{TABLE} ORDER BY data, codigo_base', 'params': []},
+                json={'sql': f'SELECT t.data::text AS data, t.codigo_base, COALESCE(NULLIF(BTRIM(g.nome_base), \'\'), t.base) AS base, COALESCE(NULLIF(BTRIM(g.uf), \'\'), t.uf) AS uf, COALESCE(NULLIF(BTRIM(g.responsavel_regiao), \'\'), t.rm) AS rm, COALESCE(NULLIF(BTRIM(g.coordenador), \'\'), NULLIF(BTRIM(g.supervisor), \'\'), t.sc) AS sc, t.total_pedidos, t.t0_ok, t.t0_perdido, t.taxa_t0 FROM public.{TABLE} t LEFT JOIN jt_operacao.vw_gestao_colaboradores_atual g ON g.estacao_no = BTRIM(t.codigo_base::text) ORDER BY t.data, t.codigo_base', 'params': []},
                 timeout=(15, 120))
             r.raise_for_status()
             rows = parse_query(r.json())
